@@ -48,4 +48,18 @@ func TestList(t *testing.T) {
 		}
 		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
 	})
+
+	t.Run("check delete nodes", func(t *testing.T) {
+		l := NewList()
+
+		l.PushFront(20)     // [20]
+		l.Remove(l.Front()) // []
+		require.Equal(t, 0, l.Len())
+
+		l.PushFront(20)     // [20]
+		l.PushBack(30)      // [20, 30]
+		l.Remove(l.Front()) // [30]
+		l.Remove(l.Back())  // []
+		require.Equal(t, 0, l.Len())
+	})
 }
