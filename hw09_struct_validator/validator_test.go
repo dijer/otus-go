@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type UserRole string
@@ -42,10 +44,103 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			// Place your code here.
+			in: User{
+				ID:     "123",
+				Name:   "name",
+				Age:    123,
+				Email:  "test",
+				Role:   "test",
+				Phones: []string{"123"},
+			},
+			expectedErr: ValidationErrors{
+				ValidationError{
+					Field: "ID",
+					Err:   ErrValidationStringLengthNotEqual,
+				},
+				ValidationError{
+					Field: "Age",
+					Err:   ErrValidationIntNotMax,
+				},
+				ValidationError{
+					Field: "Email",
+					Err:   ErrValidationRegExpNotMatch,
+				},
+				ValidationError{
+					Field: "Role",
+					Err:   ErrValidationNotIncludesString,
+				},
+				ValidationError{
+					Field: "Phones",
+					Err:   ErrValidationStringLengthNotEqual,
+				},
+			},
 		},
-		// ...
-		// Place your code here.
+		{
+			in: User{
+				ID:     "4e33a976-b726-4377-a8f3-5ac93e190bfd",
+				Name:   "name",
+				Age:    44,
+				Email:  "q@q.ru",
+				Role:   "admin",
+				Phones: []string{"89991234567"},
+			},
+			expectedErr: nil,
+		},
+
+		{
+			in: App{
+				Version: "5",
+			},
+			expectedErr: ValidationErrors{
+				ValidationError{
+					Field: "Version",
+					Err:   ErrValidationStringLengthNotEqual,
+				},
+			},
+		},
+		{
+			in: App{
+				Version: "12345",
+			},
+			expectedErr: nil,
+		},
+
+		{
+			in: Token{
+				Header:    nil,
+				Payload:   nil,
+				Signature: nil,
+			},
+			expectedErr: nil,
+		},
+		{
+			in: Token{
+				Header:    []byte("application: text/json"),
+				Payload:   []byte("status: 200"),
+				Signature: []byte("signature"),
+			},
+			expectedErr: nil,
+		},
+
+		{
+			in: Response{
+				Code: 100,
+				Body: "",
+			},
+			expectedErr: ValidationErrors{
+				ValidationError{
+					Field: "Code",
+					Err:   ErrValidationIntNotIncludes,
+				},
+			},
+		},
+		{
+			in: Response{
+				Code: 200,
+				Body: "",
+			},
+			expectedErr: nil,
+		},
 	}
 
 	for i, tt := range tests {
@@ -53,8 +148,8 @@ func TestValidate(t *testing.T) {
 			tt := tt
 			t.Parallel()
 
-			// Place your code here.
-			_ = tt
+			err := Validate(tt.in)
+			require.Equal(t, tt.expectedErr, err)
 		})
 	}
 }
