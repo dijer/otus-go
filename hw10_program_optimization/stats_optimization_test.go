@@ -3,6 +3,14 @@
 
 package hw10programoptimization
 
+// go test -v -count=1 -timeout=30s -tags bench .
+// === RUN   TestGetDomainStat_Time_And_Memory
+//     stats_optimization_test.go:46: time used: 220.401819ms / 300ms
+//     stats_optimization_test.go:47: memory used: 13Mb / 30Mb
+// --- PASS: TestGetDomainStat_Time_And_Memory (5.53s)
+// PASS
+// ok      github.com/dijer/otus-go/hw10_program_optimization      5.544s
+
 import (
 	"archive/zip"
 	"testing"
