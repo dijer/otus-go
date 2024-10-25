@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -61,5 +62,12 @@ func TestTelnetClient(t *testing.T) {
 		}()
 
 		wg.Wait()
+	})
+
+	t.Run("empty address", func(t *testing.T) {
+		client := NewTelnetClient("", time.Second, os.Stdin, os.Stdout)
+		err := client.Connect()
+
+		require.Equal(t, err, ErrCantConnect)
 	})
 }
