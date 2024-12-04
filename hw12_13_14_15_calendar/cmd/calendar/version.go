@@ -7,11 +7,15 @@ import (
 )
 
 var (
-	release   = "UNKNOWN"
+	//lint:ignore U1000 Ignore unused variable
+	release = "UNKNOWN"
+	//lint:ignore U1000 Ignore unused variable
 	buildDate = "UNKNOWN"
-	gitHash   = "UNKNOWN"
+	//lint:ignore U1000 Ignore unused variable
+	gitHash = "UNKNOWN"
 )
 
+//lint:ignore U1000 Ignore unused variable
 func printVersion() {
 	if err := json.NewEncoder(os.Stdout).Encode(struct {
 		Release   string

@@ -2,25 +2,55 @@ package app
 
 import (
 	"context"
+
+	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
 )
 
-type App struct { // TODO
+type App interface {
+	AddEvent(ctx context.Context, event storage.Event) error
+	UpdateEvent(ctx context.Context, event storage.Event) error
+	DeleteEvent(ctx context.Context, id int64) error
+	GetEventsList(ctx context.Context) ([]storage.Event, error)
 }
 
-type Logger interface { // TODO
+type Logger interface {
+	Info(msg ...string)
+	Error(msg ...string)
+	Warn(msg ...string)
+	Debug(msg ...string)
 }
 
-type Storage interface { // TODO
+type Storage interface {
+	AddEvent(ctx context.Context, event storage.Event) error
+	UpdateEvent(ctx context.Context, event storage.Event) error
+	DeleteEvent(ctx context.Context, id int64) error
+	GetEventsList(ctx context.Context) ([]storage.Event, error)
 }
 
-func New(logger Logger, storage Storage) *App {
-	return &App{}
+type app struct {
+	logger  Logger
+	storage Storage
 }
 
-func (a *App) CreateEvent(ctx context.Context, id, title string) error {
-	// TODO
-	return nil
-	// return a.storage.CreateEvent(storage.Event{ID: id, Title: title})
+func New(logger Logger, storage Storage) App {
+	return &app{
+		logger:  logger,
+		storage: storage,
+	}
 }
 
-// TODO
+func (a *app) AddEvent(ctx context.Context, event storage.Event) error {
+	return a.storage.AddEvent(ctx, event)
+}
+
+func (a *app) UpdateEvent(ctx context.Context, event storage.Event) error {
+	return a.storage.UpdateEvent(ctx, event)
+}
+
+func (a *app) DeleteEvent(ctx context.Context, id int64) error {
+	return a.storage.DeleteEvent(ctx, id)
+}
+
+func (a *app) GetEventsList(ctx context.Context) ([]storage.Event, error) {
+	return a.storage.GetEventsList(ctx)
+}

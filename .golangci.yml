@@ -16,6 +16,10 @@ linters-settings:
           - "github.com/stretchr/testify/require"
           - "github.com/cheggaaa/pb/v3"
           - "github.com/json-iterator/go"
+          - "github.com/pelletier/go-toml"
+          - "github.com/dijer/otus-go/hw12_13_14_15_calendar"
+          - "github.com/jmoiron/sqlx"
+          - "github.com/pressly/goose"
 
 issues:
   exclude-rules:

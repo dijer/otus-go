@@ -3,38 +3,49 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/app"
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/app"
+	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
+	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
+	internalhttp "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/server/http"
+	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
+	memorystorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/memory"
+	sqlstorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "./configs/config.toml", "Path to configuration file")
 }
 
 func main() {
 	flag.Parse()
 
-	if flag.Arg(0) == "version" {
-		printVersion()
+	config, err := config.NewConfig(configFile)
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
-	config := NewConfig()
 	logg := logger.New(config.Logger.Level)
 
-	storage := memorystorage.New()
+	var storage storage.Storage
+	if config.Storage.Storage == "sql" {
+		storage := sqlstorage.New(config.Database)
+		storage.Connect(context.Background())
+	} else {
+		storage = memorystorage.New()
+	}
+
 	calendar := app.New(logg, storage)
 
-	server := internalhttp.NewServer(logg, calendar)
+	server := internalhttp.NewServer(logg, calendar, config.Server)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
