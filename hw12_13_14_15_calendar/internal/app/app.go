@@ -3,7 +3,10 @@ package app
 import (
 	"context"
 
+	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
+	memorystorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/memory"
+	sqlstorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 type App interface {
@@ -32,7 +35,16 @@ type app struct {
 	storage Storage
 }
 
-func New(logger Logger, storage Storage) App {
+func New(logger Logger, cfg *config.Config) App {
+	var storage Storage
+	if cfg.Storage.Storage == "sql" {
+		storage := sqlstorage.New(cfg.Database)
+		storage.Connect(context.Background())
+		storage.Migrate()
+	} else {
+		storage = memorystorage.New()
+	}
+
 	return &app{
 		logger:  logger,
 		storage: storage,

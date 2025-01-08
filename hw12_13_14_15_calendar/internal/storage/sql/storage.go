@@ -34,11 +34,6 @@ func (s *Storage) Connect(ctx context.Context) error {
 		return err
 	}
 
-	err = s.Migrate()
-	if err != nil {
-		return err
-	}
-
 	err = db.PingContext(ctx)
 	if err != nil {
 		return err

@@ -36,6 +36,8 @@ type Handler struct {
 	logger Logger
 }
 
+const readHeaderTimeout = 5 * time.Second
+
 func NewServer(logger Logger, app Application, config config.ServerConf) *Server {
 	return &Server{
 		logger: logger,
@@ -62,7 +64,7 @@ func (s *Server) Start(_ context.Context) error {
 	s.server = &http.Server{
 		Addr:              net.JoinHostPort(s.config.Host, strconv.Itoa(int(s.config.Port))),
 		Handler:           mux,
-		ReadHeaderTimeout: 5 * time.Second,
+		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
 	return s.server.ListenAndServe()

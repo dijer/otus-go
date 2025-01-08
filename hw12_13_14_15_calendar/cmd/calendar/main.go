@@ -13,9 +13,6 @@ import (
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/server/http"
-	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
-	memorystorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/memory"
-	sqlstorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 var configFile string
@@ -35,15 +32,7 @@ func main() {
 
 	logg := logger.New(config.Logger.Level)
 
-	var storage storage.Storage
-	if config.Storage.Storage == "sql" {
-		storage := sqlstorage.New(config.Database)
-		storage.Connect(context.Background())
-	} else {
-		storage = memorystorage.New()
-	}
-
-	calendar := app.New(logg, storage)
+	calendar := app.New(logg, config)
 
 	server := internalhttp.NewServer(logg, calendar, config.Server)
 
