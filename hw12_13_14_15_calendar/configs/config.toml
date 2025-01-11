@@ -7,11 +7,15 @@ storage = "sql"
 [database]
 host = "localhost"
 port = 5432
-user = "user"
-password = "password"
-dbname = "calendar"
-migrate = "migrations"
+user = "otus_user"
+password = "otus_password"
+dbname = "exampledb"
 
-[server]
+[http]
 host = "localhost"
 port = 8080
+
+[grpc]
+transport = "tcp"
+host = "localhost"
+port = 50051

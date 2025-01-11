@@ -7,6 +7,9 @@ import (
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
 	"github.com/jmoiron/sqlx"
+
+	// init pg driver.
+	_ "github.com/lib/pq"
 	"github.com/pressly/goose"
 )
 
@@ -41,6 +44,12 @@ func (s *Storage) Connect(ctx context.Context) error {
 
 	s.db = db
 
+	err = s.Migrate()
+	if err != nil {
+		fmt.Println("err migrate", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -60,16 +69,16 @@ func (s *Storage) AddEvent(_ context.Context, event Event) error {
 	}
 
 	_, err = s.db.Exec(
-		`insert into events (title, start_time, end_time) values ($1, $2, $3)`,
-		event.Title, event.StartTime, event.EndTime,
+		`insert into events (title, start_time, end_time, owner, description) values ($1, $2, $3, $4, $5)`,
+		event.Title, event.StartTime, event.EndTime, event.Owner, event.Description,
 	)
 	return err
 }
 
 func (s *Storage) UpdateEvent(_ context.Context, event Event) error {
 	res, err := s.db.Exec(
-		`update events set title=$1, start_time=$2, end_time=$3 where id=$4`,
-		event.Title, event.StartTime, event.EndTime, event.ID,
+		`update events set title=$1, start_time=$2, end_time=$3, description=$4, owner=$5 where id=$6`,
+		event.Title, event.StartTime, event.EndTime, event.Description, event.Owner, event.ID,
 	)
 	if err != nil {
 		return err
@@ -83,7 +92,7 @@ func (s *Storage) UpdateEvent(_ context.Context, event Event) error {
 	return nil
 }
 
-func (s *Storage) DeleteEvent(_ context.Context, id int64) error {
+func (s *Storage) DeleteEvent(_ context.Context, id int32) error {
 	res, err := s.db.Exec(
 		`delete from events where id=$1`,
 		id,
@@ -107,11 +116,12 @@ func (s *Storage) GetEventsList(_ context.Context) ([]Event, error) {
 }
 
 func (s *Storage) Migrate() error {
+	fmt.Println("migrate")
 	err := goose.SetDialect("postgres")
 	if err != nil {
 		return err
 	}
 
-	err = goose.Up(s.db.DB, s.config.Migrate)
+	err = goose.Up(s.db.DB, "migrations")
 	return err
 }

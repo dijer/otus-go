@@ -1,75 +1,83 @@
-package internalhttp
+package httpserver
 
 import (
 	"context"
+	"log"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/app"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
-	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
+	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
+	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/pb"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-type Server struct {
-	app    Application
-	logger Logger
-	config config.ServerConf
-	server *http.Server
-}
-
-type Logger interface {
-	Info(msg ...string)
-	Error(msg ...string)
-	Warn(msg ...string)
-	Debug(msg ...string)
-}
-
-type Application interface {
-	AddEvent(ctx context.Context, event storage.Event) error
-	UpdateEvent(ctx context.Context, event storage.Event) error
-	DeleteEvent(ctx context.Context, id int64) error
-	GetEventsList(ctx context.Context) ([]storage.Event, error)
+type HTTPServer struct {
+	app     app.App
+	logger  logger.Logger
+	httpCfg config.HTTPServerConf
+	grpcCfg config.GRPCServerConf
+	server  *http.Server
 }
 
 type Handler struct {
-	logger Logger
+	logger logger.Logger
 }
 
 const readHeaderTimeout = 5 * time.Second
 
-func NewServer(logger Logger, app Application, config config.ServerConf) *Server {
-	return &Server{
-		logger: logger,
-		app:    app,
-		config: config,
+func New(logger *logger.Logger, app app.App, httpCfg config.HTTPServerConf, grpcCfg config.GRPCServerConf) *HTTPServer {
+	return &HTTPServer{
+		logger:  *logger,
+		app:     app,
+		httpCfg: httpCfg,
+		grpcCfg: grpcCfg,
 	}
 }
 
-func (h *Handler) HelloWorld(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) HelloWorld(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
 	h.logger.Info("Hello world!")
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Hello, World!"))
 }
 
-func (s *Server) Start(_ context.Context) error {
+func (s *HTTPServer) Start(ctx context.Context) error {
 	handler := &Handler{
 		logger: s.logger,
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/hello", handler.loggingMiddleware(handler.HelloWorld))
+	mux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{}),
+	)
+	mux.HandlePath("GET", "/hello", handler.loggingMiddleware(handler.HelloWorld))
+
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	err := pb.RegisterCalendarServiceHandlerFromEndpoint(
+		ctx,
+		mux,
+		net.JoinHostPort(s.grpcCfg.Host, strconv.Itoa(s.grpcCfg.Port)),
+		opts,
+	)
+	if err != nil {
+		return err
+	}
 
 	s.server = &http.Server{
-		Addr:              net.JoinHostPort(s.config.Host, strconv.Itoa(int(s.config.Port))),
+		Addr:              net.JoinHostPort(s.httpCfg.Host, strconv.Itoa(s.httpCfg.Port)),
 		Handler:           mux,
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
+	log.Println("HTTP server started on", s.httpCfg.Host, ":", s.httpCfg.Port)
 	return s.server.ListenAndServe()
 }
 
-func (s *Server) Stop(ctx context.Context) error {
+func (s *HTTPServer) Stop(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }

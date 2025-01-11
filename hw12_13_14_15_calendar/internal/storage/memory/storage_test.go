@@ -22,6 +22,6 @@ func TestStorage(t *testing.T) {
 	}
 
 	s.AddEvent(ctx, e)
-	require.Equal(t, s.id, int64(1))
+	require.Equal(t, s.id, int32(1))
 	require.NotEmpty(t, s.events[1])
 }
