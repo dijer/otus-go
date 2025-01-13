@@ -9,11 +9,12 @@ import (
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/pb"
+	factorystorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/factory"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func setupTestServer() *GRPCServer {
+func setupTestServer() (*GRPCServer, error) {
 	cfg := &config.Config{
 		Logger: config.LoggerConf{
 			Level: "INFO",
@@ -29,13 +30,18 @@ func setupTestServer() *GRPCServer {
 	}
 
 	log := logger.New(cfg.Logger.Level)
-	app := app.New(log, cfg)
+	storage, err := factorystorage.New(cfg)
+	if err != nil {
+		return nil, err
+	}
 
-	return New(log, app, cfg.GRPC)
+	app := app.New(log, storage)
+	return New(log, app, cfg.GRPC), nil
 }
 
 func TestAddEvent(t *testing.T) {
-	server := setupTestServer()
+	server, err := setupTestServer()
+	require.NoError(t, err)
 
 	req := &pb.AddEventRequest{
 		Event: &pb.Event{
@@ -54,7 +60,8 @@ func TestAddEvent(t *testing.T) {
 }
 
 func TestUpdateEvent(t *testing.T) {
-	server := setupTestServer()
+	server, err := setupTestServer()
+	require.NoError(t, err)
 
 	_, _ = server.AddEvent(context.Background(), &pb.AddEventRequest{
 		Event: &pb.Event{
@@ -83,7 +90,8 @@ func TestUpdateEvent(t *testing.T) {
 }
 
 func TestDeleteEvent(t *testing.T) {
-	server := setupTestServer()
+	server, err := setupTestServer()
+	require.NoError(t, err)
 
 	_, _ = server.AddEvent(context.Background(), &pb.AddEventRequest{
 		Event: &pb.Event{
@@ -105,7 +113,8 @@ func TestDeleteEvent(t *testing.T) {
 }
 
 func TestGetEventsList(t *testing.T) {
-	server := setupTestServer()
+	server, err := setupTestServer()
+	require.NoError(t, err)
 
 	_, _ = server.AddEvent(context.Background(), &pb.AddEventRequest{
 		Event: &pb.Event{

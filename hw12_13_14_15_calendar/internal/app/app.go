@@ -4,11 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
-	memorystorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/memory"
-	sqlstorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 type App interface {
@@ -23,18 +20,7 @@ type app struct {
 	storage storage.Storage
 }
 
-func New(logger *logger.Logger, cfg *config.Config) App {
-	var storage storage.Storage
-	if cfg.Storage.Storage == "sql" {
-		storage = sqlstorage.New(cfg.Database)
-		err := storage.(*sqlstorage.Storage).Connect(context.Background())
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		storage = memorystorage.New()
-	}
-
+func New(logger *logger.Logger, storage storage.Storage) App {
 	return &app{
 		logger:  *logger,
 		storage: storage,

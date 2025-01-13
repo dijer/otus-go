@@ -10,6 +10,7 @@ import (
 type Event = storage.Event
 
 type Storage struct {
+	storage.Storage
 	events map[int32]Event
 	mu     sync.RWMutex
 	id     int32

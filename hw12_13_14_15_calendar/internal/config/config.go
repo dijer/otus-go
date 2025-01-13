@@ -20,8 +20,12 @@ type LoggerConf struct {
 }
 
 type DatabaseConf struct {
-	Host, User, Password, DBName, Migrate string
-	Port                                  int
+	Host,
+	User,
+	Password,
+	DBName,
+	Migrate string
+	Port int
 }
 
 type HTTPServerConf struct {

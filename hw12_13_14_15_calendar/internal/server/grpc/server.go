@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"strconv"
 
@@ -44,6 +45,8 @@ func (s *GRPCServer) Start(_ context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("strt grpc")
 
 	return s.server.Serve(lsn)
 }

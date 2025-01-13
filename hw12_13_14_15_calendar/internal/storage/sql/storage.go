@@ -14,6 +14,7 @@ import (
 )
 
 type Storage struct {
+	storage.Storage
 	config config.DatabaseConf
 	db     *sqlx.DB
 }

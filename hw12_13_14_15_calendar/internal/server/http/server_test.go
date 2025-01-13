@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/pb"
 	grpcserver "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/server/grpc"
+	factorystorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/factory"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,15 +30,15 @@ func getFreePort() (int, error) {
 	return listener.Addr().(*net.TCPAddr).Port, nil
 }
 
-func setupTestServers() (cancel context.CancelFunc, httpPort int, ctx context.Context) {
-	httpPort, err := getFreePort()
+func setupTestServers() (cancel context.CancelFunc, httpPort int, ctx context.Context, err error) {
+	httpPort, err = getFreePort()
 	if err != nil {
-		panic("failed get free port")
+		return
 	}
 
 	grpcPort, err := getFreePort()
 	if err != nil {
-		panic("failed get free port")
+		return
 	}
 
 	cfg := &config.Config{
@@ -58,7 +60,11 @@ func setupTestServers() (cancel context.CancelFunc, httpPort int, ctx context.Co
 	}
 
 	log := logger.New(cfg.Logger.Level)
-	app := app.New(log, cfg)
+	storage, err := factorystorage.New(cfg)
+	if err != nil {
+		return
+	}
+	app := app.New(log, storage)
 
 	grpcSrv := grpcserver.New(log, app, cfg.GRPC)
 	httpSrv := New(log, app, cfg.HTTP, cfg.GRPC)
@@ -66,16 +72,45 @@ func setupTestServers() (cancel context.CancelFunc, httpPort int, ctx context.Co
 	ctx, cancel = context.WithCancel(context.Background())
 
 	go grpcSrv.Start(ctx)
-	time.Sleep(500 * time.Millisecond)
-
 	go httpSrv.Start(ctx)
-	time.Sleep(500 * time.Millisecond)
+
+	err = waitForServer(cfg.GRPC.Host, grpcPort)
+	if err != nil {
+		cancel()
+		return
+	}
+
+	err = waitForServer(cfg.HTTP.Host, httpPort)
+	if err != nil {
+		cancel()
+		return
+	}
 
 	return
 }
 
+func waitForServer(host string, port int) error {
+	address := fmt.Sprintf("%s:%d", host, port)
+	timeout := time.After(10 * time.Second)
+	tick := time.Tick(500 * time.Millisecond)
+
+	for {
+		select {
+		case <-timeout:
+			return errors.New("server failed to start")
+		case <-tick:
+			conn, err := net.Dial("tcp", address)
+			if err == nil {
+				conn.Close()
+				return nil
+			}
+		}
+	}
+}
+
 func TestHelloWorld(t *testing.T) {
-	cancel, httpPort, ctx := setupTestServers()
+	cancel, httpPort, ctx, err := setupTestServers()
+	require.NoError(t, err)
 	defer cancel()
 
 	req, _ := http.NewRequestWithContext(
@@ -91,7 +126,8 @@ func TestHelloWorld(t *testing.T) {
 }
 
 func TestAddEvent(t *testing.T) {
-	cancel, httpPort, _ := setupTestServers()
+	cancel, httpPort, _, err := setupTestServers()
+	require.NoError(t, err)
 	defer cancel()
 
 	req, _ := http.NewRequest(
@@ -115,7 +151,8 @@ func TestAddEvent(t *testing.T) {
 }
 
 func TestUpdateEvent(t *testing.T) {
-	cancel, httpPort, ctx := setupTestServers()
+	cancel, httpPort, ctx, err := setupTestServers()
+	require.NoError(t, err)
 	defer cancel()
 
 	req, _ := http.NewRequest(
@@ -159,7 +196,8 @@ func TestUpdateEvent(t *testing.T) {
 }
 
 func TestDeleteEvent(t *testing.T) {
-	cancel, httpPort, ctx := setupTestServers()
+	cancel, httpPort, ctx, err := setupTestServers()
+	require.NoError(t, err)
 	defer cancel()
 
 	req, _ := http.NewRequestWithContext(
@@ -195,7 +233,8 @@ func TestDeleteEvent(t *testing.T) {
 }
 
 func TestGetEventsList(t *testing.T) {
-	cancel, httpPort, ctx := setupTestServers()
+	cancel, httpPort, ctx, err := setupTestServers()
+	require.NoError(t, err)
 	defer cancel()
 
 	req, _ := http.NewRequestWithContext(

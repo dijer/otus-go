@@ -15,9 +15,12 @@ import (
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	grpcserver "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/server/grpc"
 	httpserver "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/server/http"
+	factorystorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/factory"
 )
 
 var configFile string
+
+const serverShutdownTimeout = 5 * time.Second
 
 func init() {
 	flag.StringVar(&configFile, "config", "./configs/config.toml", "Path to configuration file")
@@ -36,7 +39,13 @@ func main() {
 
 	logg := logger.New(config.Logger.Level)
 
-	calendar := app.New(logg, config)
+	storage, err := factorystorage.New(config)
+	if err != nil {
+		logg.Error(err.Error())
+		return
+	}
+
+	calendar := app.New(logg, storage)
 
 	httpServer := httpserver.New(logg, calendar, config.HTTP, config.GRPC)
 	grpcServer := grpcserver.New(logg, calendar, config.GRPC)
@@ -73,7 +82,7 @@ func main() {
 
 		logg.Info("shut down servers")
 
-		stopCtx, stopCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		stopCtx, stopCancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
 		defer stopCancel()
 		if err := httpServer.Stop(stopCtx); err != nil {
 			logg.Error("Failed to stop HTTP server: " + err.Error())
