@@ -1,14 +1,16 @@
-package internalhttp
+package httpserver
 
 import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
-func (h *Handler) loggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		next(w, r)
+func (h *Handler) loggingMiddleware(next runtime.HandlerFunc) runtime.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		next(w, r, pathParams)
 
 		start := time.Now()
 		h.logger.Info(

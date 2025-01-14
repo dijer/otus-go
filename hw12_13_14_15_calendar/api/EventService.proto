@@ -1,7 +1,73 @@
 syntax = "proto3";
 
 package event;
+option go_package = "./;pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+service CalendarService {
+    rpc AddEvent(AddEventRequest) returns (AddEventResponse) {
+        option (google.api.http) = {
+            post: "/events/add"
+            body: "*"
+        };
+    }
+	rpc UpdateEvent(UpdateEventRequest) returns (UpdateEventResponse) {
+        option (google.api.http) = {
+            put: "/events/{event.id}"
+            body: "*"
+        };
+    }
+	rpc DeleteEvent(DeleteEventRequest) returns (DeleteEventResponse) {
+        option (google.api.http) = {
+            delete: "/events/{id}"
+        };
+    }
+	rpc GetEventsList(GetEventsListRequest) returns (GetEventsListResponse) {
+        option (google.api.http) = {
+            get: "/events/list"
+        };
+    }
+}
 
 message Event {
-    // TODO
+    int32 id = 1;
+    string title = 2;
+    string description = 3;
+    int32 owner = 4;
+    google.protobuf.Timestamp start_time = 5;
+    google.protobuf.Timestamp end_time = 6;
+}
+
+message AddEventRequest {
+    Event event = 1;
+}
+
+message AddEventResponse {
+    string message = 1;
+}
+
+message UpdateEventRequest {
+    int32 id = 1;
+    Event event = 2;
+}
+
+message UpdateEventResponse {
+    string message = 1;
+}
+
+message DeleteEventRequest {
+    int32 id = 1;
+}
+
+message DeleteEventResponse {
+    string message = 1;
+}
+
+message GetEventsListRequest {}
+
+message GetEventsListResponse {
+    string message = 1;
+    repeated Event events = 2;
 }

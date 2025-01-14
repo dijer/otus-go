@@ -8,12 +8,11 @@ import (
 )
 
 type Config struct {
-	Logger  LoggerConf
-	Storage struct {
-		Storage string
-	}
+	Logger   LoggerConf
+	Storage  StorageConf
 	Database DatabaseConf
-	Server   ServerConf
+	HTTP     HTTPServerConf
+	GRPC     GRPCServerConf
 }
 
 type LoggerConf struct {
@@ -21,13 +20,27 @@ type LoggerConf struct {
 }
 
 type DatabaseConf struct {
-	Host, User, Password, DBName, Migrate string
-	Port                                  int64
+	Host,
+	User,
+	Password,
+	DBName,
+	Migrate string
+	Port int
 }
 
-type ServerConf struct {
+type HTTPServerConf struct {
 	Host string
-	Port int64
+	Port int
+}
+
+type GRPCServerConf struct {
+	Host      string
+	Port      int
+	Transport string
+}
+
+type StorageConf struct {
+	Storage string
 }
 
 func NewConfig(configFile string) (*Config, error) {
