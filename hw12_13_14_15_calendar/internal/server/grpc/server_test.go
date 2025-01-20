@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/app"
-	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
+	config "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/calendar"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/pb"
 	factorystorage "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage/factory"

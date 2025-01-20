@@ -1,0 +1,10 @@
+[logger]
+level = "INFO"
+
+[rabbit]
+host = "localhost"
+port = 5672
+user = "guest"
+password = "guest"
+exchange = "otus_exchange"
+queue = "otus_queue"

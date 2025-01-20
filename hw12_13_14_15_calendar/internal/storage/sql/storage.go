@@ -2,15 +2,10 @@ package sqlstorage
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
+	config "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/calendar"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
 	"github.com/jmoiron/sqlx"
-
-	// init pg driver.
-	_ "github.com/lib/pq"
-	"github.com/pressly/goose"
 )
 
 type Storage struct {
@@ -21,41 +16,11 @@ type Storage struct {
 
 type Event = storage.Event
 
-func New(config config.DatabaseConf) *Storage {
+func New(config config.DatabaseConf, db *sqlx.DB) *Storage {
 	return &Storage{
 		config: config,
+		db:     db,
 	}
-}
-
-func (s *Storage) Connect(ctx context.Context) error {
-	dsn := fmt.Sprintf(
-		"user=%s password=%s dbname=%s host=%s port=%d",
-		s.config.User, s.config.Password, s.config.DBName, s.config.Host, s.config.Port,
-	)
-
-	db, err := sqlx.Connect("postgres", dsn)
-	if err != nil {
-		return err
-	}
-
-	err = db.PingContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	s.db = db
-
-	err = s.Migrate()
-	if err != nil {
-		fmt.Println("err migrate", err)
-		return err
-	}
-
-	return nil
-}
-
-func (s *Storage) Close(_ context.Context) error {
-	return s.db.Close()
 }
 
 func (s *Storage) AddEvent(_ context.Context, event Event) error {
@@ -112,17 +77,6 @@ func (s *Storage) DeleteEvent(_ context.Context, id int32) error {
 
 func (s *Storage) GetEventsList(_ context.Context) ([]Event, error) {
 	var events []Event
-	err := s.db.Select(&events, `select * from events`)
+	err := s.db.Select(&events, `select id, title, owner, start_time, end_time, description from events`)
 	return events, err
-}
-
-func (s *Storage) Migrate() error {
-	fmt.Println("migrate")
-	err := goose.SetDialect("postgres")
-	if err != nil {
-		return err
-	}
-
-	err = goose.Up(s.db.DB, "migrations")
-	return err
 }

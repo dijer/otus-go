@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/app"
-	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
+	config "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/calendar"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	grpcserver "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/server/grpc"
 	httpserver "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/server/http"
@@ -31,7 +31,7 @@ var wg sync.WaitGroup
 func main() {
 	flag.Parse()
 
-	config, err := config.NewConfig(configFile)
+	config, err := config.New(configFile)
 	if err != nil {
 		fmt.Println(err)
 		return

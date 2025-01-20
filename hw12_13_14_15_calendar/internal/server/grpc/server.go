@@ -2,12 +2,11 @@ package grpcserver
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"strconv"
 
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/app"
-	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
+	config "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/calendar"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/pb"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
@@ -21,17 +20,21 @@ type GRPCServer struct {
 	pb.UnimplementedCalendarServiceServer
 	server *grpc.Server
 	app    app.App
-	logger logger.Logger
+	log    logger.Logger
 	config config.GRPCServerConf
 }
 
-func New(logger *logger.Logger, app app.App, cfg config.GRPCServerConf) *GRPCServer {
+func New(
+	logger *logger.Logger,
+	app app.App,
+	cfg config.GRPCServerConf,
+) *GRPCServer {
 	grpcServer := grpc.NewServer()
 
 	grpcServerStruct := &GRPCServer{
 		server: grpcServer,
 		app:    app,
-		logger: *logger,
+		log:    *logger,
 		config: cfg,
 	}
 
@@ -46,7 +49,7 @@ func (s *GRPCServer) Start(_ context.Context) error {
 		return err
 	}
 
-	fmt.Println("strt grpc")
+	s.log.Info("strt grpc")
 
 	return s.server.Serve(lsn)
 }
