@@ -9,16 +9,17 @@ import (
 type Storage interface {
 	AddEvent(ctx context.Context, event Event) error
 	UpdateEvent(ctx context.Context, event Event) error
-	DeleteEvent(ctx context.Context, id int64) error
+	DeleteEvent(ctx context.Context, id int32) error
 	GetEventsList(ctx context.Context) ([]Event, error)
 }
 
 type Event struct {
-	ID          int64
-	Title       string
-	StartTime   time.Time
-	EndTime     time.Time
-	Description *string
+	ID          int32     `db:"id"`
+	Title       string    `db:"title"`
+	Owner       int32     `db:"owner"`
+	StartTime   time.Time `db:"start_time"`
+	EndTime     time.Time `db:"end_time"`
+	Description *string   `db:"description"`
 }
 
 var (

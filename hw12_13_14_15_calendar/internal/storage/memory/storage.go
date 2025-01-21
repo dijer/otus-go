@@ -10,14 +10,15 @@ import (
 type Event = storage.Event
 
 type Storage struct {
-	events map[int64]Event
+	storage.Storage
+	events map[int32]Event
 	mu     sync.RWMutex
-	id     int64
+	id     int32
 }
 
 func New() *Storage {
 	return &Storage{
-		events: make(map[int64]Event),
+		events: make(map[int32]Event),
 		id:     0,
 	}
 }
@@ -58,7 +59,7 @@ func (s *Storage) UpdateEvent(_ context.Context, event Event) error {
 	return nil
 }
 
-func (s *Storage) DeleteEvent(_ context.Context, id int64) error {
+func (s *Storage) DeleteEvent(_ context.Context, id int32) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

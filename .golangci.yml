@@ -20,6 +20,8 @@ linters-settings:
           - "github.com/dijer/otus-go/hw12_13_14_15_calendar"
           - "github.com/jmoiron/sqlx"
           - "github.com/pressly/goose"
+          - "github.com/grpc-ecosystem/grpc-gateway"
+          - "github.com/lib/pq"
 
 issues:
   exclude-rules:
@@ -43,7 +45,6 @@ linters:
     - exhaustive
     - copyloopvar
     - funlen
-    - gci
     - gocognit
     - goconst
     - gocritic
