@@ -3,8 +3,6 @@ run:
   build-tags:
     - bench
     - !bench
-  skip-files:
-    - ".*server_test\\.go"  # github actions fails on server start test
 
 linters-settings:
   funlen:

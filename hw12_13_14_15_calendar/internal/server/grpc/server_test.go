@@ -1,3 +1,6 @@
+//go:build tcp
+// +build tcp
+
 package grpcserver
 
 import (

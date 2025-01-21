@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
@@ -28,12 +27,6 @@ func New(logger *logger.Logger, storage storage.Storage) App {
 }
 
 func (a app) AddEvent(ctx context.Context, event storage.Event) error {
-	fmt.Println("app add event")
-
-	if a.storage == nil {
-		panic("app storage empty!")
-	}
-
 	return a.storage.AddEvent(ctx, event)
 }
 
