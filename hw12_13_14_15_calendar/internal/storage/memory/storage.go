@@ -84,3 +84,15 @@ func (s *Storage) GetEventsList(_ context.Context) ([]Event, error) {
 
 	return events, nil
 }
+
+func (s *Storage) GetNotifications(_ context.Context) ([]Event, error) {
+	return nil, nil
+}
+
+func (s *Storage) CleanupOldEvents(_ context.Context) error {
+	return nil
+}
+
+func (s *Storage) SendNotifications(_ context.Context, _ int32) error {
+	return nil
+}

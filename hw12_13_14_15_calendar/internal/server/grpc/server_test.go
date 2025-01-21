@@ -33,7 +33,18 @@ func setupTestServer() (*GRPCServer, error) {
 	}
 
 	log := logger.New(cfg.Logger.Level)
-	storage, err := factorystorage.New(cfg)
+	storage, err := factorystorage.New(factorystorage.Config{
+		Database: factorystorage.DatabaseConf{
+			Host:     cfg.Database.Host,
+			User:     cfg.Database.User,
+			Password: cfg.Database.Password,
+			DBName:   cfg.Database.DBName,
+			Port:     cfg.Database.Port,
+		},
+		Storage: factorystorage.StorageConf{
+			Storage: cfg.Storage.Storage,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}

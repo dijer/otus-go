@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	config "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/senderconfig"
+	notificationcfg "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/notificationconfig"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/notifications"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/rabbitmq"
@@ -22,7 +22,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	cfg, err := config.New(configFile)
+	cfg, err := notificationcfg.New(configFile)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -30,8 +30,12 @@ func main() {
 
 	logg := logger.New(cfg.Logger.Level)
 
-	rabbitURL := fmt.Sprintf("amqp://%s:%s@%s:%d", cfg.Rabbit.User, cfg.Rabbit.Password, cfg.Rabbit.Host, cfg.Rabbit.Port)
-	rabbitClient, err := rabbitmq.New(rabbitURL, logg)
+	rabbitClient, err := rabbitmq.New(rabbitmq.Config{
+		User:     cfg.Rabbit.User,
+		Password: cfg.Rabbit.Password,
+		Host:     cfg.Rabbit.Host,
+		Port:     cfg.Rabbit.Port,
+	}, logg)
 	if err != nil {
 		logg.Error(err.Error())
 		return

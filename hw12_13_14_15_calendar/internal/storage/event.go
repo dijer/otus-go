@@ -11,6 +11,9 @@ type Storage interface {
 	UpdateEvent(ctx context.Context, event Event) error
 	DeleteEvent(ctx context.Context, id int32) error
 	GetEventsList(ctx context.Context) ([]Event, error)
+	GetNotifications(ctx context.Context) ([]Event, error)
+	CleanupOldEvents(ctx context.Context) error
+	SendNotification(ctx context.Context, id int32) error
 }
 
 type Event struct {

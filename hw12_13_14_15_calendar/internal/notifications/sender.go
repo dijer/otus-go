@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	config "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/senderconfig"
+	notificationcfg "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/notificationconfig"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/rabbitmq"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
@@ -12,12 +12,16 @@ import (
 )
 
 type Sender struct {
-	cfg          config.SenderConfig
+	cfg          notificationcfg.NotificationConfig
 	rabbitClient rabbitmq.RabbitClient
 	log          logger.Logger
 }
 
-func NewSender(cfg *config.SenderConfig, rabbitClient *rabbitmq.RabbitClient, log *logger.Logger) *Sender {
+func NewSender(
+	cfg *notificationcfg.NotificationConfig,
+	rabbitClient *rabbitmq.RabbitClient,
+	log *logger.Logger,
+) *Sender {
 	return &Sender{
 		cfg:          *cfg,
 		rabbitClient: *rabbitClient,

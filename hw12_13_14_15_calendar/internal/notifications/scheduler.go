@@ -1,35 +1,38 @@
 package notifications
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
-	config "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/schedulerconfig"
+	notificationcfg "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/notificationconfig"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/rabbitmq"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
-	"github.com/jmoiron/sqlx"
 )
 
 type Notification struct {
-	cfg          config.SchedulerConfig
+	cfg          notificationcfg.NotificationConfig
 	rabbitClient rabbitmq.RabbitClient
-	db           *sqlx.DB
+	storage      storage.Storage
 	log          logger.Logger
 }
 
 func NewScheduler(
-	cfg *config.SchedulerConfig, rabbitClient *rabbitmq.RabbitClient, db *sqlx.DB, log *logger.Logger,
+	cfg *notificationcfg.NotificationConfig,
+	rabbitClient *rabbitmq.RabbitClient,
+	storage storage.Storage,
+	log *logger.Logger,
 ) *Notification {
 	return &Notification{
 		cfg:          *cfg,
 		rabbitClient: *rabbitClient,
-		db:           db,
+		storage:      storage,
 		log:          *log,
 	}
 }
 
-func (n *Notification) Run() error {
+func (n *Notification) Run(ctx context.Context) error {
 	err := n.rabbitClient.ExchangeDeclare(n.cfg.Rabbit.Exchange)
 	if err != nil {
 		return err
@@ -37,7 +40,7 @@ func (n *Notification) Run() error {
 
 	err = n.rabbitClient.QueueDeclare(n.cfg.Rabbit.Queue)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	duration, err := time.ParseDuration(n.cfg.Scheduler.Interval)
@@ -53,49 +56,35 @@ func (n *Notification) Run() error {
 		return err
 	}
 	cleanupTicker := time.NewTicker(cleanupDuration)
+	defer cleanupTicker.Stop()
 
 	n.log.Info("start scheduler!")
 	for {
 		select {
 		case <-eventsTicker.C:
-			notifications, err := n.getNotifications()
+			notifications, err := n.storage.GetNotifications(ctx)
 			if err != nil {
 				n.log.Error(err.Error())
 				continue
 			}
 
-			err = n.sendNotifications(notifications)
+			err = n.sendNotifications(ctx, notifications)
 			if err != nil {
 				n.log.Error(err.Error())
 				continue
 			}
 		case <-cleanupTicker.C:
-			err := n.cleanupOldEvents()
+			err := n.storage.CleanupOldEvents(ctx)
 			if err != nil {
+				n.log.Error(err.Error())
 				continue
 			}
 		}
 	}
 }
 
-func (n *Notification) getNotifications() (*[]storage.Event, error) {
-	var events []storage.Event
-
-	query := `
-		select id, title, owner, start_time, end_time, description
-		from events where start_time > now()
-		and notification_sent = false
-	`
-	err := n.db.Select(&events, query)
-	if err != nil {
-		return nil, err
-	}
-
-	return &events, nil
-}
-
-func (n *Notification) sendNotifications(notifications *[]storage.Event) error {
-	for _, notification := range *notifications {
+func (n *Notification) sendNotifications(ctx context.Context, notifications []storage.Event) error {
+	for _, notification := range notifications {
 		body, err := json.Marshal(notification)
 		if err != nil {
 			return err
@@ -108,18 +97,11 @@ func (n *Notification) sendNotifications(notifications *[]storage.Event) error {
 			return err
 		}
 
-		query := `update events set notification_sent = true where id = $1`
-		_, err = n.db.Exec(query, notification.ID)
+		err = n.storage.SendNotification(ctx, notification.ID)
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func (n *Notification) cleanupOldEvents() error {
-	query := `delete from events where start_time < now() - interval '1 year'`
-	_, err := n.db.Exec(query)
-	return err
 }

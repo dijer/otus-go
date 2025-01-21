@@ -1,4 +1,4 @@
-package schedulerconfig
+package notificationcfg
 
 import (
 	"os"
@@ -8,11 +8,12 @@ import (
 	toml "github.com/pelletier/go-toml"
 )
 
-type SchedulerConfig struct {
+type NotificationConfig struct {
 	Rabbit    RabbitConf
 	Logger    LoggerConf
 	Database  DatabaseConf
 	Scheduler SchedulerConf
+	Storage   StorageConf
 }
 
 type RabbitConf struct {
@@ -42,8 +43,12 @@ type SchedulerConf struct {
 	Cleanup string
 }
 
-func New(configFile string) (*SchedulerConfig, error) {
-	var config SchedulerConfig
+type StorageConf struct {
+	Storage string
+}
+
+func New(configFile string) (*NotificationConfig, error) {
+	var config NotificationConfig
 
 	file, err := os.Open(configFile)
 	if err != nil {

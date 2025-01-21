@@ -1,3 +1,6 @@
+//go:build ampq
+// +build ampq
+
 package rabbitmq
 
 import (
@@ -22,7 +25,16 @@ func TestRabbitClient(t *testing.T) {
 	mockChan.On("Close").Return(nil)
 	mockConn.On("Close").Return(nil)
 
-	client, err := New("amqp://guest:guest@localhost:5672/", log)
+	cfg := Config{
+		Port:     5672,
+		Host:     "localhost",
+		User:     "guest",
+		Password: "guest",
+		Exchange: "testExchange",
+		Queue:    "testQueue",
+	}
+
+	client, err := New(cfg, log)
 	require.Nil(t, err)
 	require.NotNil(t, client)
 

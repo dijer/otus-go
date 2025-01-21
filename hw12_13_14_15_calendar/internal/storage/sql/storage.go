@@ -3,20 +3,28 @@ package sqlstorage
 import (
 	"context"
 
-	config "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/calendar"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
 	"github.com/jmoiron/sqlx"
 )
 
 type Storage struct {
 	storage.Storage
-	config config.DatabaseConf
+	config Config
 	db     *sqlx.DB
 }
 
 type Event = storage.Event
 
-func New(config config.DatabaseConf, db *sqlx.DB) *Storage {
+type Config struct {
+	Host,
+	User,
+	Password,
+	DBName,
+	Migrate string
+	Port int
+}
+
+func New(config Config, db *sqlx.DB) *Storage {
 	return &Storage{
 		config: config,
 		db:     db,
@@ -79,4 +87,32 @@ func (s *Storage) GetEventsList(_ context.Context) ([]Event, error) {
 	var events []Event
 	err := s.db.Select(&events, `select id, title, owner, start_time, end_time, description from events`)
 	return events, err
+}
+
+func (s *Storage) GetNotifications(_ context.Context) ([]Event, error) {
+	var events []Event
+
+	query := `
+		select id, title, owner, start_time, end_time, description
+		from events where start_time > now()
+		and notification_sent = false
+	`
+	err := s.db.Select(&events, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
+func (s *Storage) CleanupOldEvents(_ context.Context) error {
+	query := `delete from events where start_time < now() - interval '1 year'`
+	_, err := s.db.Exec(query)
+	return err
+}
+
+func (s *Storage) SendNotifications(_ context.Context, id int32) error {
+	query := `update events set notification_sent = true where id = $1`
+	_, err := s.db.Exec(query, id)
+	return err
 }

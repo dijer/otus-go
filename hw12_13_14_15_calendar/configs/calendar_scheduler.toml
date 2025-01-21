@@ -19,3 +19,6 @@ dbname = "exampledb"
 [scheduler]
 interval = "10s"
 cleanup = "1h"
+
+[storage]
+storage = "sql"

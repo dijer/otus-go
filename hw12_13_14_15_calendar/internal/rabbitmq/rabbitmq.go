@@ -1,7 +1,7 @@
 package rabbitmq
 
 import (
-	"time"
+	"fmt"
 
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	"github.com/streadway/amqp"
@@ -12,11 +12,20 @@ type RabbitClient struct {
 	conn      *amqp.Connection
 	queueName string
 	channel   *amqp.Channel
-	notifyCh  chan *amqp.Error
 	log       *logger.Logger
 }
 
-func New(url string, log *logger.Logger) (*RabbitClient, error) {
+type Config struct {
+	Port int
+	Host,
+	User,
+	Password,
+	Exchange,
+	Queue string
+}
+
+func New(cfg Config, log *logger.Logger) (*RabbitClient, error) {
+	url := fmt.Sprintf("amqp://%s:%s@%s:%d", cfg.User, cfg.Password, cfg.Host, cfg.Port)
 	rabbitClient := &RabbitClient{
 		url: url,
 		log: log,
@@ -121,24 +130,6 @@ func (r *RabbitClient) connect() error {
 
 	r.conn = conn
 	r.channel = channel
-	r.notifyCh = r.channel.NotifyClose(make(chan *amqp.Error))
-
-	go r.reconnect()
 
 	return nil
-}
-
-func (r *RabbitClient) reconnect() {
-	for err := range r.notifyCh {
-		r.log.Error(err.Error())
-		for {
-			time.Sleep(5 * time.Second) // Ждем перед повторным подключением
-			if err := r.connect(); err != nil {
-				r.log.Error(err.Error())
-				continue
-			}
-			r.log.Info("reconnected!")
-			break
-		}
-	}
 }
