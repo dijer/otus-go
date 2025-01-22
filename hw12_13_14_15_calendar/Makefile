@@ -6,10 +6,12 @@ GENERATE_DIR="./internal/pb"
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
-.PHONY: build run build-img run-img version test lint generate dev
+.PHONY: build run build-img run-img version test lint generate dev rabbit-up rabbit-down
 
 build:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
+	go build -v -o $(BIN)_scheduler -ldflags "$(LDFLAGS)" ./cmd/scheduler
+	go build -v -o $(BIN)_sender -ldflags "$(LDFLAGS)" ./cmd/sender
 
 run: build
 	$(BIN) -config ./configs/config.toml
@@ -48,3 +50,9 @@ generate:
 
 dev:
 	go run ./cmd/calendar/main.go
+
+rabbit-up:
+	docker-compose up -d
+
+rabbit-down:
+	docker-compose down

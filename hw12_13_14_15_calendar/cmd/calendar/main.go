@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/app"
-	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
+	config "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config/calendar"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/logger"
 	grpcserver "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/server/grpc"
 	httpserver "github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/server/http"
@@ -31,15 +31,26 @@ var wg sync.WaitGroup
 func main() {
 	flag.Parse()
 
-	config, err := config.NewConfig(configFile)
+	cfg, err := config.New(configFile)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	logg := logger.New(config.Logger.Level)
+	logg := logger.New(cfg.Logger.Level)
 
-	storage, err := factorystorage.New(config)
+	storage, err := factorystorage.New(factorystorage.Config{
+		Database: factorystorage.DatabaseConf{
+			Host:     cfg.Database.Host,
+			User:     cfg.Database.User,
+			Password: cfg.Database.Password,
+			DBName:   cfg.Database.DBName,
+			Port:     cfg.Database.Port,
+		},
+		Storage: factorystorage.StorageConf{
+			Storage: cfg.Storage.Storage,
+		},
+	})
 	if err != nil {
 		logg.Error(err.Error())
 		return
@@ -47,8 +58,8 @@ func main() {
 
 	calendar := app.New(logg, storage)
 
-	httpServer := httpserver.New(logg, calendar, config.HTTP, config.GRPC)
-	grpcServer := grpcserver.New(logg, calendar, config.GRPC)
+	httpServer := httpserver.New(logg, calendar, cfg.HTTP, cfg.GRPC)
+	grpcServer := grpcserver.New(logg, calendar, cfg.GRPC)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
@@ -59,7 +70,7 @@ func main() {
 
 	go func() {
 		defer wg.Done()
-		fmt.Printf("http runnin on: %v\n", config.HTTP.Port)
+		fmt.Printf("http runnin on: %v\n", cfg.HTTP.Port)
 		if err := httpServer.Start(ctx); err != nil {
 			logg.Error("failed to start http server: " + err.Error())
 			cancel()
@@ -69,7 +80,7 @@ func main() {
 
 	go func() {
 		defer wg.Done()
-		fmt.Printf("grpc runnin on: %v\n", config.GRPC.Port)
+		fmt.Printf("grpc runnin on: %v\n", cfg.GRPC.Port)
 		if err := grpcServer.Start(ctx); err != nil {
 			logg.Error("failed to start grpc server: " + err.Error())
 			cancel()

@@ -43,7 +43,7 @@ type StorageConf struct {
 	Storage string
 }
 
-func NewConfig(configFile string) (*Config, error) {
+func New(configFile string) (*Config, error) {
 	var config Config
 
 	file, err := os.Open(configFile)

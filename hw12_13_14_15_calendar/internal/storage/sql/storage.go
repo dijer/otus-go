@@ -2,60 +2,33 @@ package sqlstorage
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/config"
 	"github.com/dijer/otus-go/hw12_13_14_15_calendar/internal/storage"
 	"github.com/jmoiron/sqlx"
-
-	// init pg driver.
-	_ "github.com/lib/pq"
-	"github.com/pressly/goose"
 )
 
 type Storage struct {
 	storage.Storage
-	config config.DatabaseConf
+	config Config
 	db     *sqlx.DB
 }
 
 type Event = storage.Event
 
-func New(config config.DatabaseConf) *Storage {
+type Config struct {
+	Host,
+	User,
+	Password,
+	DBName,
+	Migrate string
+	Port int
+}
+
+func New(config Config, db *sqlx.DB) *Storage {
 	return &Storage{
 		config: config,
+		db:     db,
 	}
-}
-
-func (s *Storage) Connect(ctx context.Context) error {
-	dsn := fmt.Sprintf(
-		"user=%s password=%s dbname=%s host=%s port=%d",
-		s.config.User, s.config.Password, s.config.DBName, s.config.Host, s.config.Port,
-	)
-
-	db, err := sqlx.Connect("postgres", dsn)
-	if err != nil {
-		return err
-	}
-
-	err = db.PingContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	s.db = db
-
-	err = s.Migrate()
-	if err != nil {
-		fmt.Println("err migrate", err)
-		return err
-	}
-
-	return nil
-}
-
-func (s *Storage) Close(_ context.Context) error {
-	return s.db.Close()
 }
 
 func (s *Storage) AddEvent(_ context.Context, event Event) error {
@@ -112,17 +85,34 @@ func (s *Storage) DeleteEvent(_ context.Context, id int32) error {
 
 func (s *Storage) GetEventsList(_ context.Context) ([]Event, error) {
 	var events []Event
-	err := s.db.Select(&events, `select * from events`)
+	err := s.db.Select(&events, `select id, title, owner, start_time, end_time, description from events`)
 	return events, err
 }
 
-func (s *Storage) Migrate() error {
-	fmt.Println("migrate")
-	err := goose.SetDialect("postgres")
+func (s *Storage) GetNotifications(_ context.Context) ([]Event, error) {
+	var events []Event
+
+	query := `
+		select id, title, owner, start_time, end_time, description
+		from events where start_time > now()
+		and notification_sent = false
+	`
+	err := s.db.Select(&events, query)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = goose.Up(s.db.DB, "migrations")
+	return events, nil
+}
+
+func (s *Storage) CleanupOldEvents(_ context.Context) error {
+	query := `delete from events where start_time < now() - interval '1 year'`
+	_, err := s.db.Exec(query)
+	return err
+}
+
+func (s *Storage) SendNotifications(_ context.Context, id int32) error {
+	query := `update events set notification_sent = true where id = $1`
+	_, err := s.db.Exec(query, id)
 	return err
 }

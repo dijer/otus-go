@@ -1,0 +1,24 @@
+[logger]
+level = "INFO"
+
+[rabbit]
+host = "localhost"
+port = 5672
+user = "guest"
+password = "guest"
+exchange = "otus_exchange"
+queue = "otus_queue"
+
+[database]
+host = "localhost"
+port = 5432
+user = "otus_user"
+password = "otus_password"
+dbname = "exampledb"
+
+[scheduler]
+interval = "10s"
+cleanup = "1h"
+
+[storage]
+storage = "sql"

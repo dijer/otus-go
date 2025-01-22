@@ -12,8 +12,8 @@ Content-Type: application/json
     "event": {
         "title": "test title",
         "description": "test descr",
-        "start_time": "2025-01-10T14:00:00Z",
-        "end_time": "2025-01-10T15:00:00Z",
+        "start_time": "2025-01-21T12:00:00Z",
+        "end_time": "2025-01-21T13:00:00Z",
         "owner": 3
     }
 }
@@ -37,7 +37,7 @@ Content-Type: application/json
 ###
 
 # DeleteEvent
-DELETE http://localhost:8080/events/6
+DELETE http://localhost:8080/events/2
 
 ###
 

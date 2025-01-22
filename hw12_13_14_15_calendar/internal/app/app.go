@@ -19,7 +19,10 @@ type app struct {
 	storage storage.Storage
 }
 
-func New(logger *logger.Logger, storage storage.Storage) App {
+func New(
+	logger *logger.Logger,
+	storage storage.Storage,
+) App {
 	return &app{
 		logger:  *logger,
 		storage: storage,
